@@ -3,9 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Clock, DollarSign, Wifi, Webhook, Save } from "lucide-react";
+import { ArrowLeft, Clock, DollarSign, Wifi, Webhook, Save, Moon, Sun, Monitor, Key, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useTheme } from "@/contexts/ThemeContext";
+import { Switch } from "@/components/ui/switch";
 
 interface AdminSettingsProps {
   onBack: () => void;
@@ -13,6 +15,20 @@ interface AdminSettingsProps {
 
 export const AdminSettings = ({ onBack }: AdminSettingsProps) => {
   const { toast } = useToast();
+  const { theme, setTheme } = useTheme();
+  
+  // Admin credentials
+  const [adminCredentials, setAdminCredentials] = useState({
+    username: "admin",
+    password: "admin123",
+    newPassword: "",
+    confirmPassword: ""
+  });
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false
+  });
   
   // Plans configuration
   const [plans, setPlans] = useState([
@@ -50,6 +66,39 @@ export const AdminSettings = ({ onBack }: AdminSettingsProps) => {
     });
   };
 
+  const handleCredentialsUpdate = () => {
+    if (adminCredentials.newPassword !== adminCredentials.confirmPassword) {
+      toast({
+        title: "Erro",
+        description: "As senhas não coincidem.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (adminCredentials.newPassword.length < 6) {
+      toast({
+        title: "Erro", 
+        description: "A senha deve ter pelo menos 6 caracteres.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Update credentials logic here
+    setAdminCredentials({
+      ...adminCredentials,
+      password: adminCredentials.newPassword,
+      newPassword: "",
+      confirmPassword: ""
+    });
+    
+    toast({
+      title: "Credenciais atualizadas",
+      description: "Login e senha foram alterados com sucesso.",
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -64,7 +113,7 @@ export const AdminSettings = ({ onBack }: AdminSettingsProps) => {
       </div>
 
       <Tabs defaultValue="plans" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="plans" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
             Planos
@@ -80,6 +129,10 @@ export const AdminSettings = ({ onBack }: AdminSettingsProps) => {
           <TabsTrigger value="webhook" className="flex items-center gap-2">
             <Webhook className="h-4 w-4" />
             Webhook
+          </TabsTrigger>
+          <TabsTrigger value="system" className="flex items-center gap-2">
+            <Save className="h-4 w-4" />
+            Sistema
           </TabsTrigger>
         </TabsList>
 
@@ -277,6 +330,153 @@ export const AdminSettings = ({ onBack }: AdminSettingsProps) => {
               </Button>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* System Configuration */}
+        <TabsContent value="system">
+          <div className="space-y-6">
+            {/* Theme Configuration */}
+            <Card className="shadow-elegant">
+              <CardHeader>
+                <CardTitle>Configuração do Tema</CardTitle>
+                <CardDescription>
+                  Personalize a aparência da interface
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Tema da Interface</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Escolha entre modo claro, escuro ou automático
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant={theme === "light" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setTheme("light")}
+                    >
+                      <Sun className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant={theme === "dark" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setTheme("dark")}
+                    >
+                      <Moon className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant={theme === "system" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setTheme("system")}
+                    >
+                      <Monitor className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Admin Credentials */}
+            <Card className="shadow-elegant">
+              <CardHeader>
+                <CardTitle>Credenciais de Acesso</CardTitle>
+                <CardDescription>
+                  Altere o login e senha do administrador
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="admin-username">Usuário Administrador</Label>
+                  <Input
+                    id="admin-username"
+                    value={adminCredentials.username}
+                    onChange={(e) => setAdminCredentials({ ...adminCredentials, username: e.target.value })}
+                    placeholder="Nome de usuário"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="current-password">Senha Atual</Label>
+                  <div className="relative">
+                    <Input
+                      id="current-password"
+                      type={showPasswords.current ? "text" : "password"}
+                      value={adminCredentials.password}
+                      disabled
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
+                    >
+                      {showPasswords.current ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="new-password">Nova Senha</Label>
+                  <div className="relative">
+                    <Input
+                      id="new-password"
+                      type={showPasswords.new ? "text" : "password"}
+                      value={adminCredentials.newPassword}
+                      onChange={(e) => setAdminCredentials({ ...adminCredentials, newPassword: e.target.value })}
+                      placeholder="Digite a nova senha"
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
+                    >
+                      {showPasswords.new ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password">Confirmar Nova Senha</Label>
+                  <div className="relative">
+                    <Input
+                      id="confirm-password"
+                      type={showPasswords.confirm ? "text" : "password"}
+                      value={adminCredentials.confirmPassword}
+                      onChange={(e) => setAdminCredentials({ ...adminCredentials, confirmPassword: e.target.value })}
+                      placeholder="Confirme a nova senha"
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
+                    >
+                      {showPasswords.confirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+
+                <Button 
+                  onClick={handleCredentialsUpdate} 
+                  variant="network" 
+                  className="w-full"
+                  disabled={!adminCredentials.newPassword || !adminCredentials.confirmPassword}
+                >
+                  <Key className="h-4 w-4 mr-2" />
+                  Atualizar Credenciais
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
